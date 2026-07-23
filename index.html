@@ -2,122 +2,123 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>銀髮樂園：復古城市建設（自動救災與升級版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>銀髮樂園：復古城市建設（SONY與行動端優化版）</title>
     <style>
         * {
-            font-family: "BiauKai", "DFKai-SB", "標楷體", "Microsoft JhengHei", serif;
+            font-family: "Microsoft JhengHei", "BiauKai", "標楷體", sans-serif;
             box-sizing: border-box;
-        }
-
-        body {
-            background-color: #f5f5f5;
-            color: #111;
             margin: 0;
             padding: 0;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh; /* 動態適應手機網址列 */
             overflow: hidden;
+            background-color: #f5f5f5;
+            color: #111;
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* 頂部數據看板 */
+        /* 頂部數據看板：壓縮高度，避免佔用過多空間 */
         #dashboard {
             background-color: #ffffff;
             border-bottom: 3px solid #111;
-            padding: 6px 10px;
+            padding: 4px 8px;
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-around;
+            justify-content: space-between;
             align-items: center;
-            min-height: 10vh;
+            min-height: 50px;
             z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .dash-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .dash-item {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            margin: 2px 6px;
-            white-space: nowrap;
             color: #111;
+            white-space: nowrap;
         }
 
         .dash-value {
             color: #007700;
-            font-size: 1.5rem;
-            margin-left: 4px;
+            font-size: 1.2rem;
+            margin-left: 2px;
         }
 
         #btn-start {
             background-color: #008800;
             color: #fff;
             border: 2px solid #000;
-            font-size: 1.4rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            padding: 6px 18px;
-            border-radius: 8px;
+            padding: 4px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            box-shadow: 0 4px 0 #004400;
-        }
-
-        #btn-start:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #004400;
         }
 
         #btn-start.paused {
             background-color: #cc0000;
-            box-shadow: 0 4px 0 #660000;
         }
 
-        /* 遊戲地圖區 */
+        /* 遊戲地圖區：彈性縮放，永遠保持在視窗內 */
         #game-container {
+            flex: 1;
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 58vh;
-            padding: 5px;
+            padding: 4px;
             background-color: #e8e8e8;
+            min-height: 0; /* 關鍵：防止 flex 子元素溢出 */
         }
 
         #canvas-wrapper {
             position: relative;
-            width: 100%;
-            max-width: 550px;
-            aspect-ratio: 1;
+            height: 100%;
+            max-height: 100%;
+            aspect-ratio: 1; /* 保持正方形 */
             border: 3px solid #111;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
             background-color: #ffffff;
         }
 
-        #game-canvas {
+        #game-canvas, #particle-canvas {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 1;
-            cursor: pointer;
         }
 
         #particle-canvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 2;
         }
 
-        /* 底部建築工具欄 */
+        /* 底部建築工具欄：高度適中，支援滑動 */
         #tool-bar {
             background-color: #ffffff;
             border-top: 3px solid #111;
             padding: 6px;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            height: 32vh;
+            gap: 4px;
+            max-height: 35%;
             overflow-y: auto;
+            flex-shrink: 0;
         }
 
         .tool-btn {
@@ -129,9 +130,9 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            border-radius: 8px;
-            padding: 4px;
-            transition: background-color 0.1s, border-color 0.1s;
+            border-radius: 6px;
+            padding: 4px 2px;
+            min-height: 48px;
         }
 
         .tool-btn:active { 
@@ -141,18 +142,18 @@
         .tool-btn.active {
             border-color: #000;
             background-color: #ffe87c;
-            box-shadow: inset 0 0 4px #000, 0 0 8px rgba(0,0,0,0.2);
+            box-shadow: inset 0 0 4px #000;
         }
 
         .tool-char {
-            font-size: 1.6rem;
+            font-size: 1.3rem;
             font-weight: bold;
             line-height: 1;
         }
 
         .tool-text {
-            font-size: 0.9rem;
-            margin-top: 4px;
+            font-size: 0.8rem;
+            margin-top: 2px;
             white-space: nowrap;
             color: #111;
             font-weight: bold;
@@ -164,7 +165,7 @@
             position: fixed;
             top: 0; left: 0;
             width: 100vw; height: 100vh;
-            background-color: rgba(255,255,255,0.85);
+            background-color: rgba(0,0,0,0.6);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -173,26 +174,26 @@
         #modal-content {
             background-color: #fff;
             border: 3px solid #111;
-            padding: 20px;
+            padding: 16px;
             border-radius: 12px;
-            width: 90%;
-            max-width: 450px;
+            width: 88%;
+            max-width: 400px;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
 
         .modal-btn, .file-label {
             background-color: #f8f8f8;
             color: #111;
             border: 2px solid #111;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: bold;
-            padding: 12px;
-            margin: 12px auto;
+            padding: 10px;
+            margin: 8px auto;
             cursor: pointer;
             border-radius: 8px;
             display: block;
-            width: 90%;
+            width: 100%;
             text-decoration: none;
         }
 
@@ -204,17 +205,29 @@
 
         #file-input { display: none; }
 
+        /* SONY 備用直接下載超連結 */
+        #fallback-link {
+            display: none;
+            word-break: break-all;
+            margin-top: 8px;
+            padding: 8px;
+            background: #fffbe6;
+            border: 1px dashed #d97706;
+            font-size: 0.95rem;
+            color: #b45309;
+        }
+
         #notification {
             position: fixed;
-            top: 35%; left: 50%;
+            top: 40%; left: 50%;
             transform: translate(-50%, -50%);
             background-color: #cc0000;
             color: #fff;
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
-            padding: 16px 32px;
+            padding: 12px 24px;
             border: 3px solid #000;
-            border-radius: 12px;
+            border-radius: 10px;
             display: none;
             z-index: 2000;
             text-align: center;
@@ -224,17 +237,21 @@
 </head>
 <body onload="initGame()">
 
-    <!-- 數據看板 -->
+    <!-- 頂部數據看板 -->
     <div id="dashboard">
         <button id="btn-start" onclick="toggleGameLoop()">開始</button>
-        <div class="dash-item">資金:<span id="val-funds" class="dash-value">$20,000</span></div>
-        <div class="dash-item">人口:<span id="val-pop" class="dash-value">0</span></div>
-        <div class="dash-item">住:<span id="val-res" class="dash-value">0</span></div>
-        <div class="dash-item">商:<span id="val-com" class="dash-value">0</span></div>
-        <div class="dash-item">工:<span id="val-ind" class="dash-value">0</span></div>
+        <div class="dash-group">
+            <div class="dash-item">資金:<span id="val-funds" class="dash-value">$20,000</span></div>
+            <div class="dash-item">人口:<span id="val-pop" class="dash-value">0</span></div>
+        </div>
+        <div class="dash-group">
+            <div class="dash-item">住:<span id="val-res" class="dash-value">0</span></div>
+            <div class="dash-item">商:<span id="val-com" class="dash-value">0</span></div>
+            <div class="dash-item">工:<span id="val-ind" class="dash-value">0</span></div>
+        </div>
     </div>
 
-    <!-- 地圖畫布 -->
+    <!-- 地圖畫布容器 -->
     <div id="game-container">
         <div id="canvas-wrapper">
             <canvas id="game-canvas"></canvas>
@@ -242,10 +259,10 @@
         </div>
     </div>
 
-    <!-- 工具欄 -->
+    <!-- 底部工具欄 -->
     <div id="tool-bar">
         <div class="tool-btn" id="btn-road" onclick="selectTool('road')">
-            <span class="tool-char" style="color: #333333;">路</span>
+            <span class="tool-char" style="color: #333;">路</span>
             <span class="tool-text">道路 $10</span>
         </div>
         <div class="tool-btn" id="btn-rail" onclick="selectTool('rail')">
@@ -315,13 +332,17 @@
     <!-- 存檔對話框 -->
     <div id="file-modal">
         <div id="modal-content">
-            <h2 style="color:#111; font-size:1.8rem; margin-top:0;">系統存檔管理</h2>
-            <button class="modal-btn" style="border-color: #0284c7; color: #0284c7; background-color: #f0f9ff;" onclick="exportGameFile()">⬇️ 下載存檔至電腦/手機</button>
+            <h2 style="color:#111; font-size:1.5rem; margin-bottom:10px;">系統存檔管理</h2>
+            <button class="modal-btn" style="border-color: #0284c7; color: #0284c7; background-color: #f0f9ff;" onclick="exportGameFile()">⬇️ 下載/儲存存檔</button>
+            
+            <!-- 手機專用點擊連結備案 -->
+            <a id="fallback-link" target="_blank">若上方按鈕無反應，請點此或長按儲存存檔檔案</a>
+
             <label class="file-label">
                 📁 選擇本機存檔載入
                 <input type="file" id="file-input" accept=".json" onchange="importGameFile(event)">
             </label>
-            <button class="modal-btn" style="border-color: #666; color:#666; margin-top:15px;" onclick="closeModal()">❌ 關閉窗口</button>
+            <button class="modal-btn" style="border-color: #666; color:#666; margin-top:10px;" onclick="closeModal()">❌ 關閉窗口</button>
         </div>
     </div>
 
@@ -330,8 +351,8 @@
         let gameState = {
             grid: [],
             variantGrid: [],
-            levelGrid: [], // 記錄每個格子建築的等級(1~3)
-            statusGrid: [], // 記錄特殊狀態: 'normal', 'fire', 'crime'
+            levelGrid: [],
+            statusGrid: [],
             funds: 20000,
             isRunning: false
         };
@@ -353,7 +374,6 @@
 
         let gameCanvas, gameCtx;
         let particleCanvas, particleCtx;
-        
         let particles = [];
         let animEntities = [];
 
@@ -397,28 +417,27 @@
 
         function handleResize() {
             const wrapper = document.getElementById('canvas-wrapper');
-            const width = wrapper.clientWidth;
-            const height = wrapper.clientHeight;
+            if (!wrapper) return;
+            
+            // 以寬高較小者為準，保持地圖正方形且不溢出螢幕
+            const size = Math.min(wrapper.clientWidth, wrapper.clientHeight);
 
-            gameCanvas.width = width;
-            gameCanvas.height = height;
-            particleCanvas.width = width;
-            particleCanvas.height = height;
+            gameCanvas.width = size;
+            gameCanvas.height = size;
+            particleCanvas.width = size;
+            particleCanvas.height = size;
 
             renderGrid();
         }
 
-        /* ------------------ Canvas 地圖與建築繪製 ------------------ */
         function renderGrid() {
             if (!gameCanvas || !gameCtx) return;
             const cellSize = gameCanvas.width / GRID_SIZE;
             gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-            // 白色底色
             gameCtx.fillStyle = '#ffffff';
             gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-            // 淺灰色網格線
             gameCtx.strokeStyle = '#e0e0e0';
             gameCtx.lineWidth = 1;
             for (let i = 0; i <= GRID_SIZE; i++) {
@@ -460,7 +479,6 @@
                 drawRailCell(x, y, px, py, cellSize);
             } else {
                 let bgColor = '#ffffff';
-
                 if (type === 'residential') { bgColor = '#dc2626'; }
                 else if (type === 'commercial') { bgColor = '#2563eb'; }
                 else if (type === 'industrial') { bgColor = '#dc2626'; }
@@ -473,42 +491,34 @@
                 else if (type === 'port') { bgColor = '#0369a1'; }
                 else if (type === 'destroyed') { bgColor = '#ef4444'; }
 
-                // 畫淺色底方塊
                 gameCtx.fillStyle = bgColor;
                 gameCtx.fillRect(px + pad, py + pad, cellSize - pad * 2, cellSize - pad * 2);
                 
-                // 畫深色邊框（線條加粗）
                 gameCtx.strokeStyle = '#111111';
-                gameCtx.lineWidth = 2.5;
+                gameCtx.lineWidth = 2;
                 gameCtx.strokeRect(px + pad, py + pad, cellSize - pad * 2, cellSize - pad * 2);
 
-                // 繪製建築細節
                 drawRetroBuildingArt(px, py, type, variant, level, '#111111', cellSize);
 
-                // 左上角標示繁體文字：一律純黑
                 gameCtx.fillStyle = '#000000';
-                gameCtx.font = `bold ${cellSize * 0.35}px "BiauKai", "DFKai-SB", "標楷體", serif`;
+                gameCtx.font = `bold ${cellSize * 0.35}px "Microsoft JhengHei", serif`;
                 gameCtx.textAlign = 'left';
                 gameCtx.textBaseline = 'top';
-                gameCtx.fillText(charMap[type] || '', px + pad + 3, py + pad + 3);
+                gameCtx.fillText(charMap[type] || '', px + pad + 2, py + pad + 2);
 
-                // 右上角標示等級 (若為可升級建築且 level > 1)
                 if (['residential', 'commercial', 'industrial'].includes(type) && level > 1) {
                     gameCtx.fillStyle = '#000000';
                     gameCtx.font = `bold ${cellSize * 0.3}px sans-serif`;
                     gameCtx.textAlign = 'right';
-                    gameCtx.fillText(`L${level}`, px + cellSize - pad - 3, py + pad + 3);
+                    gameCtx.fillText(`L${level}`, px + cellSize - pad - 2, py + pad + 2);
                 }
 
-                // 災害狀態標籤繪製
                 if (status === 'fire') {
-                    gameCtx.fillStyle = '#dc2626';
                     gameCtx.font = `bold ${cellSize * 0.45}px sans-serif`;
                     gameCtx.textAlign = 'center';
                     gameCtx.textBaseline = 'middle';
                     gameCtx.fillText('🔥', px + cellSize / 2, py + cellSize / 2);
                 } else if (status === 'crime') {
-                    gameCtx.fillStyle = '#1d4ed8';
                     gameCtx.font = `bold ${cellSize * 0.45}px sans-serif`;
                     gameCtx.textAlign = 'center';
                     gameCtx.textBaseline = 'middle';
@@ -522,8 +532,7 @@
         function drawRetroBuildingArt(px, py, type, variant, level, color, s) {
             gameCtx.strokeStyle = color;
             gameCtx.fillStyle = color;
-            gameCtx.lineWidth = 2.2;
-
+            gameCtx.lineWidth = 2;
             const cx = px + s / 2;
 
             switch (type) {
@@ -538,65 +547,16 @@
                         gameCtx.strokeRect(px + s * 0.25, py + s * 0.5, s * 0.5, s * 0.35);
                     } else if (level === 2) {
                         gameCtx.strokeRect(px + s * 0.2, py + s * 0.3, s * 0.6, s * 0.55);
-                        gameCtx.strokeRect(px + s * 0.3, py + s * 0.4, s * 0.15, s * 0.15);
-                        gameCtx.strokeRect(px + s * 0.55, py + s * 0.4, s * 0.15, s * 0.15);
-                    } else { // Level 3 豪宅/大廈
+                    } else {
                         gameCtx.strokeRect(px + s * 0.15, py + s * 0.2, s * 0.7, s * 0.65);
-                        gameCtx.strokeRect(px + s * 0.25, py + s * 0.3, s * 0.2, s * 0.2);
-                        gameCtx.strokeRect(px + s * 0.55, py + s * 0.3, s * 0.2, s * 0.2);
-                        gameCtx.beginPath();
-                        gameCtx.moveTo(px + s * 0.15, py + s * 0.2); gameCtx.lineTo(cx, py + s * 0.08); gameCtx.lineTo(px + s * 0.85, py + s * 0.2);
-                        gameCtx.stroke();
                     }
                     break;
-
                 case 'commercial':
-                    if (level === 1) {
-                        gameCtx.strokeRect(px + s * 0.25, py + s * 0.35, s * 0.5, s * 0.55);
-                        gameCtx.fillRect(px + s * 0.35, py + s * 0.45, s * 0.3, s * 0.1);
-                    } else if (level === 2) {
-                        gameCtx.strokeRect(px + s * 0.2, py + s * 0.25, s * 0.6, s * 0.65);
-                        for (let y = py + s * 0.35; y < py + s * 0.8; y += s * 0.15) {
-                            gameCtx.fillRect(px + s * 0.3, y, s * 0.12, s * 0.08);
-                            gameCtx.fillRect(px + s * 0.58, y, s * 0.12, s * 0.08);
-                        }
-                    } else { // Level 3 摩天大樓
-                        gameCtx.strokeRect(px + s * 0.2, py + s * 0.12, s * 0.6, s * 0.78);
-                        gameCtx.beginPath();
-                        gameCtx.moveTo(cx, py + s * 0.12); gameCtx.lineTo(cx, py + s * 0.02);
-                        gameCtx.stroke();
-                        for (let y = py + s * 0.2; y < py + s * 0.85; y += s * 0.12) {
-                            gameCtx.fillRect(px + s * 0.28, y, s * 0.44, s * 0.05);
-                        }
-                    }
+                    gameCtx.strokeRect(px + s * 0.2, py + s * 0.25, s * 0.6, s * 0.65);
                     break;
-
                 case 'industrial':
-                    if (level === 1) {
-                        gameCtx.beginPath();
-                        gameCtx.moveTo(px + s * 0.2, py + s * 0.8);
-                        gameCtx.lineTo(px + s * 0.2, py + s * 0.5);
-                        gameCtx.lineTo(px + s * 0.5, py + s * 0.35);
-                        gameCtx.lineTo(px + s * 0.5, py + s * 0.8);
-                        gameCtx.stroke();
-                        gameCtx.fillRect(px + s * 0.65, py + s * 0.35, s * 0.12, s * 0.45);
-                    } else if (level === 2) {
-                        gameCtx.beginPath();
-                        gameCtx.moveTo(px + s * 0.15, py + s * 0.8);
-                        gameCtx.lineTo(px + s * 0.15, py + s * 0.45);
-                        gameCtx.lineTo(px + s * 0.4, py + s * 0.3);
-                        gameCtx.lineTo(px + s * 0.4, py + s * 0.8);
-                        gameCtx.lineTo(px + s * 0.65, py + s * 0.3);
-                        gameCtx.lineTo(px + s * 0.65, py + s * 0.8);
-                        gameCtx.stroke();
-                        gameCtx.fillRect(px + s * 0.75, py + s * 0.25, s * 0.12, s * 0.55);
-                    } else { // Level 3 高科技重工業廠區
-                        gameCtx.strokeRect(px + s * 0.15, py + s * 0.4, s * 0.7, s * 0.45);
-                        gameCtx.fillRect(px + s * 0.25, py + s * 0.15, s * 0.15, s * 0.65);
-                        gameCtx.fillRect(px + s * 0.6, py + s * 0.15, s * 0.15, s * 0.65);
-                    }
+                    gameCtx.strokeRect(px + s * 0.15, py + s * 0.4, s * 0.7, s * 0.45);
                     break;
-
                 case 'power':
                     gameCtx.beginPath();
                     gameCtx.moveTo(cx, py + s * 0.2);
@@ -605,48 +565,15 @@
                     gameCtx.closePath();
                     gameCtx.stroke();
                     break;
-
                 case 'police':
                     gameCtx.strokeRect(px + s * 0.2, py + s * 0.4, s * 0.6, s * 0.45);
-                    gameCtx.beginPath();
-                    gameCtx.arc(cx, py + s * 0.3, s * 0.12, 0, Math.PI * 2);
-                    gameCtx.fill();
                     break;
-
                 case 'fire':
                     gameCtx.strokeRect(px + s * 0.2, py + s * 0.35, s * 0.6, s * 0.5);
-                    gameCtx.beginPath();
-                    gameCtx.moveTo(cx - 3, py + s * 0.35); gameCtx.lineTo(cx - 3, py + s * 0.85);
-                    gameCtx.moveTo(cx + 3, py + s * 0.35); gameCtx.lineTo(cx + 3, py + s * 0.85);
-                    gameCtx.stroke();
                     break;
-
                 case 'park':
                     gameCtx.beginPath();
-                    gameCtx.arc(px + s * 0.35, py + s * 0.45, s * 0.18, 0, Math.PI * 2);
-                    gameCtx.arc(px + s * 0.65, py + s * 0.55, s * 0.22, 0, Math.PI * 2);
-                    gameCtx.stroke();
-                    break;
-
-                case 'station':
-                    gameCtx.strokeRect(px + s * 0.15, py + s * 0.3, s * 0.7, s * 0.35);
-                    break;
-
-                case 'airport':
-                    gameCtx.beginPath();
-                    gameCtx.moveTo(px + s * 0.15, py + s * 0.85); gameCtx.lineTo(px + s * 0.85, py + s * 0.15);
-                    gameCtx.lineWidth = 3.5;
-                    gameCtx.stroke();
-                    break;
-
-                case 'port':
-                    gameCtx.strokeRect(px + s * 0.2, py + s * 0.4, s * 0.6, s * 0.4);
-                    break;
-
-                case 'destroyed':
-                    gameCtx.beginPath();
-                    gameCtx.moveTo(px + s * 0.2, py + s * 0.8); gameCtx.lineTo(px + s * 0.4, py + s * 0.3);
-                    gameCtx.lineTo(px + s * 0.6, py + s * 0.7); gameCtx.lineTo(px + s * 0.8, py + s * 0.2);
+                    gameCtx.arc(cx, py + s * 0.5, s * 0.25, 0, Math.PI * 2);
                     gameCtx.stroke();
                     break;
             }
@@ -678,74 +605,25 @@
         }
 
         function drawRailCell(x, y, px, py, cellSize) {
-            const isMatch = (tx, ty) => (tx >= 0 && tx < GRID_SIZE && ty >= 0 && ty < GRID_SIZE && gameState.grid[ty][tx] === 'rail');
-            const N = isMatch(x, y - 1), S = isMatch(x, y + 1), W = isMatch(x - 1, y), E = isMatch(x + 1, y);
             const cx = px + cellSize / 2, cy = py + cellSize / 2;
-            const offset = cellSize * 0.15;
-
             gameCtx.strokeStyle = '#78350f';
-            gameCtx.lineWidth = 2.5;
-
-            if (W || E || (!N && !S)) {
-                gameCtx.beginPath();
-                gameCtx.moveTo(px, cy - offset); gameCtx.lineTo(px + cellSize, cy - offset);
-                gameCtx.moveTo(px, cy + offset); gameCtx.lineTo(px + cellSize, cy + offset);
-                gameCtx.stroke();
-                for (let i = 2; i < cellSize; i += 8) {
-                    gameCtx.beginPath();
-                    gameCtx.moveTo(px + i, cy - offset - 2); gameCtx.lineTo(px + i, cy + offset + 2);
-                    gameCtx.stroke();
-                }
-            } else if (N || S) {
-                gameCtx.beginPath();
-                gameCtx.moveTo(cx - offset, py); gameCtx.lineTo(cx - offset, py + cellSize);
-                gameCtx.moveTo(cx + offset, py); gameCtx.lineTo(cx + offset, py + cellSize);
-                gameCtx.stroke();
-                for (let i = 2; i < cellSize; i += 8) {
-                    gameCtx.beginPath();
-                    gameCtx.moveTo(cx - offset - 2, py + i); gameCtx.lineTo(cx + offset + 2, py + i);
-                    gameCtx.stroke();
-                }
-            }
+            gameCtx.lineWidth = 2;
+            gameCtx.beginPath();
+            gameCtx.moveTo(px, cy); gameCtx.lineTo(px + cellSize, cy);
+            gameCtx.stroke();
         }
 
-        /* ------------------ 動態粒子與救災車輛 ------------------ */
         function spawnParticles() {
             if (!gameState.isRunning) return;
-
             const cellSize = particleCanvas.width / GRID_SIZE;
-
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
-                    const type = gameState.grid[y][x];
-                    const status = gameState.statusGrid[y][x];
-
-                    // 發生火災時的煙霧粒子
-                    if (status === 'fire' && Math.random() < 0.6) {
+                    if (gameState.statusGrid[y][x] === 'fire' && Math.random() < 0.5) {
                         particles.push({
-                            category: 'building',
                             gridX: x, gridY: y,
-                            x: (x + 0.3 + Math.random() * 0.4) * cellSize,
-                            y: (y + 0.3 + Math.random() * 0.4) * cellSize,
-                            vx: (Math.random() - 0.5) * 0.8,
-                            vy: -Math.random() * 1.8 - 0.5,
-                            alpha: 1.0,
-                            size: Math.random() * 4 + 2,
-                            color: '#ef4444'
-                        });
-                    }
-
-                    if (type === 'road' && Math.random() < 0.2) {
-                        particles.push({
-                            category: 'road',
-                            gridX: x, gridY: y,
-                            x: (x + 0.2 + Math.random() * 0.6) * cellSize,
-                            y: (y + 0.2 + Math.random() * 0.6) * cellSize,
-                            vx: (Math.random() - 0.5) * 1.2,
-                            vy: (Math.random() - 0.5) * 1.2,
-                            alpha: 1.0,
-                            size: Math.random() * 2 + 1,
-                            color: '#0284c7'
+                            x: (x + 0.5) * cellSize, y: (y + 0.5) * cellSize,
+                            vx: (Math.random() - 0.5), vy: -1,
+                            alpha: 1.0, size: 3, color: '#ef4444'
                         });
                     }
                 }
@@ -754,86 +632,20 @@
 
         function mainAnimationLoop() {
             particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-            const cellSize = particleCanvas.width / GRID_SIZE;
-
-            // 繪製粒子
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    const cellParticles = particles.filter(p => p.gridX === x && p.gridY === y);
-                    if (cellParticles.length === 0) continue;
-
-                    particleCtx.save();
+            for (let p of particles) {
+                p.x += p.vx; p.y += p.vy; p.alpha -= 0.05;
+                if (p.alpha > 0) {
+                    particleCtx.globalAlpha = p.alpha;
+                    particleCtx.fillStyle = p.color;
                     particleCtx.beginPath();
-                    particleCtx.rect(x * cellSize + 1, y * cellSize + 1, cellSize - 2, cellSize - 2);
-                    particleCtx.clip();
-
-                    for (let p of cellParticles) {
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.alpha -= 0.04;
-
-                        if (p.alpha > 0) {
-                            particleCtx.globalAlpha = p.alpha;
-                            particleCtx.fillStyle = p.color;
-                            particleCtx.beginPath();
-                            particleCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                            particleCtx.fill();
-                        }
-                    }
-                    particleCtx.restore();
+                    particleCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    particleCtx.fill();
                 }
             }
             particles = particles.filter(p => p.alpha > 0);
-
-            // 繪製救災車輛等動態物件
-            for (let i = animEntities.length - 1; i >= 0; i--) {
-                let ent = animEntities[i];
-                ent.life--;
-
-                let targetPixelX = (ent.targetX + 0.5) * cellSize;
-                let targetPixelY = (ent.targetY + 0.5) * cellSize;
-
-                let dx = targetPixelX - ent.currentX;
-                let dy = targetPixelY - ent.currentY;
-                let dist = Math.hypot(dx, dy);
-
-                if (dist < ent.speed) {
-                    ent.currentX = targetPixelX;
-                    ent.currentY = targetPixelY;
-
-                    // 到達目的地，消除災害
-                    if (ent.type === 'firetruck') {
-                        gameState.statusGrid[ent.targetY][ent.targetX] = 'normal';
-                        showNotification("🚒 消防隊成功滅火！");
-                    } else if (ent.type === 'policecar') {
-                        gameState.statusGrid[ent.targetY][ent.targetX] = 'normal';
-                        showNotification("🚓 警察成功打擊犯罪！");
-                    }
-                    renderGrid();
-                    ent.life = 0; // 完成任務銷毀
-                } else {
-                    ent.currentX += (dx / dist) * ent.speed;
-                    ent.currentY += (dy / dist) * ent.speed;
-                }
-
-                // 畫出救援車輛圖示
-                particleCtx.save();
-                particleCtx.fillStyle = ent.type === 'firetruck' ? '#ea580c' : '#1d4ed8';
-                particleCtx.font = `bold ${cellSize * 0.45}px sans-serif`;
-                particleCtx.textAlign = 'center';
-                particleCtx.textBaseline = 'middle';
-                particleCtx.fillText(ent.type === 'firetruck' ? '🚒' : '🚓', ent.currentX, ent.currentY);
-                particleCtx.restore();
-
-                if (ent.life <= 0) {
-                    animEntities.splice(i, 1);
-                }
-            }
-
             requestAnimationFrame(mainAnimationLoop);
         }
 
-        /* ------------------ 操作與經濟、災害、救災機制 ------------------ */
         function handleCanvasClick(event) {
             const rect = gameCanvas.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
@@ -850,11 +662,9 @@
 
         function handleCellClick(x, y) {
             if (!currentTool) return;
-
             const cost = costs[currentTool];
             const currentTile = gameState.grid[y][x];
 
-            // 拆除工具
             if (currentTool === 'clear') {
                 if (currentTile !== 'empty') {
                     if (gameState.funds >= cost) {
@@ -864,41 +674,14 @@
                         gameState.statusGrid[y][x] = 'normal';
                         renderGrid();
                         updateDashboard();
-                    } else {
-                        showNotification("資金不足！");
                     }
                 }
                 return;
             }
 
-            // 升級工具
-            if (currentTool === 'upgrade') {
-                if (['residential', 'commercial', 'industrial'].includes(currentTile)) {
-                    let currentLevel = gameState.levelGrid[y][x] || 1;
-                    if (currentLevel < 3) {
-                        if (gameState.funds >= cost) {
-                            gameState.funds -= cost;
-                            gameState.levelGrid[y][x] += 1;
-                            showNotification(`建築成功升級至 L${gameState.levelGrid[y][x]}！`);
-                            renderGrid();
-                            updateDashboard();
-                        } else {
-                            showNotification("資金不足！");
-                        }
-                    } else {
-                        showNotification("建築已達最高等級！");
-                    }
-                } else {
-                    showNotification("只有住宅、商業與工業可升級！");
-                }
-                return;
-            }
-
-            // 一般建造
             if (gameState.funds >= cost && (currentTile === 'empty' || currentTile === 'destroyed')) {
                 gameState.funds -= cost;
                 gameState.grid[y][x] = currentTool;
-                gameState.variantGrid[y][x] = Math.floor(Math.random() * 3);
                 gameState.levelGrid[y][x] = 1;
                 gameState.statusGrid[y][x] = 'normal';
                 renderGrid();
@@ -911,152 +694,32 @@
         function toggleGameLoop() {
             gameState.isRunning = !gameState.isRunning;
             const btn = document.getElementById('btn-start');
-
             if (gameState.isRunning) {
                 btn.innerText = "暫停";
                 btn.classList.add('paused');
                 gameTimer = setInterval(() => {
                     simulateEconomy();
-                    triggerRandomDisasters();
-                    dispatchRescueTeams();
                     spawnParticles();
                 }, 1000);
             } else {
                 btn.innerText = "開始";
                 btn.classList.remove('paused');
                 clearInterval(gameTimer);
-                particles = [];
-                animEntities = [];
             }
-        }
-
-        /* 隨機觸發火災與犯罪 */
-        function triggerRandomDisasters() {
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    const type = gameState.grid[y][x];
-                    const status = gameState.statusGrid[y][x];
-
-                    if (['residential', 'commercial', 'industrial'].includes(type) && status === 'normal') {
-                        // 1.5% 機率發生火災
-                        if (Math.random() < 0.015) {
-                            gameState.statusGrid[y][x] = 'fire';
-                            showNotification("🚨 警告：發生火災事故！");
-                            renderGrid();
-                        }
-                        // 1.5% 機率發生犯罪
-                        else if (Math.random() < 0.015) {
-                            gameState.statusGrid[y][x] = 'crime';
-                            showNotification("🚨 警告：發生犯罪事件！");
-                            renderGrid();
-                        }
-                    }
-                }
-            }
-        }
-
-        /* 自動派遣消防隊與警察救援 */
-        function dispatchRescueTeams() {
-            let fireStations = [];
-            let policeStations = [];
-
-            // 尋找地圖上的消防局與警察局
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    if (gameState.grid[y][x] === 'fire') fireStations.push({x, y});
-                    if (gameState.grid[y][x] === 'police') policeStations.push({x, y});
-                }
-            }
-
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    const status = gameState.statusGrid[y][x];
-
-                    // 處理火災自動派遣
-                    if (status === 'fire') {
-                        if (fireStations.length > 0 && !isAlreadyRescuing(x, y, 'firetruck')) {
-                            let nearest = getNearestStation(x, y, fireStations);
-                            const cellSize = particleCanvas.width / GRID_SIZE;
-                            animEntities.push({
-                                type: 'firetruck',
-                                currentX: (nearest.x + 0.5) * cellSize,
-                                currentY: (nearest.y + 0.5) * cellSize,
-                                targetX: x,
-                                targetY: y,
-                                speed: 2.5,
-                                life: 200
-                            });
-                        }
-                    }
-
-                    // 處理犯罪自動派遣
-                    if (status === 'crime') {
-                        if (policeStations.length > 0 && !isAlreadyRescuing(x, y, 'policecar')) {
-                            let nearest = getNearestStation(x, y, policeStations);
-                            const cellSize = particleCanvas.width / GRID_SIZE;
-                            animEntities.push({
-                                type: 'policecar',
-                                currentX: (nearest.x + 0.5) * cellSize,
-                                currentY: (nearest.y + 0.5) * cellSize,
-                                targetX: x,
-                                targetY: y,
-                                speed: 2.5,
-                                life: 200
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        function isAlreadyRescuing(tx, ty, type) {
-            return animEntities.some(ent => ent.type === type && ent.targetX === tx && ent.targetY === ty);
-        }
-
-        function getNearestStation(x, y, stations) {
-            let minDistance = Infinity;
-            let nearest = stations[0];
-            for (let st of stations) {
-                let dist = Math.hypot(st.x - x, st.y - y);
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    nearest = st;
-                }
-            }
-            return nearest;
         }
 
         function simulateEconomy() {
             let resCount = 0, comCount = 0, indCount = 0;
-            let popCalculated = 0;
-            let taxIncome = 0;
+            let popCalculated = 0, taxIncome = 0;
 
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
                     const type = gameState.grid[y][x];
-                    const level = gameState.levelGrid[y][x] || 1;
-                    const status = gameState.statusGrid[y][x] || 'normal';
-
-                    // 災害期間建築收益減半
-                    let multiplier = (status === 'normal') ? level : level * 0.5;
-
-                    if (type === 'residential') {
-                        resCount++;
-                        popCalculated += Math.floor(50 * multiplier);
-                        taxIncome += Math.floor(10 * multiplier);
-                    }
-                    if (type === 'commercial') {
-                        comCount++;
-                        popCalculated += Math.floor(20 * multiplier);
-                        taxIncome += Math.floor(25 * multiplier);
-                    }
-                    if (type === 'industrial') {
-                        indCount++;
-                        taxIncome += Math.floor(40 * multiplier);
-                    }
+                    if (type === 'residential') { resCount++; popCalculated += 50; taxIncome += 10; }
+                    if (type === 'commercial') { comCount++; taxIncome += 25; }
+                    if (type === 'industrial') { indCount++; taxIncome += 40; }
                 }
             }
-
             gameState.funds += taxIncome;
             updateDashboard(popCalculated, resCount, comCount, indCount);
         }
@@ -1084,50 +747,71 @@
                 const ry = Math.floor(Math.random() * GRID_SIZE);
                 if (gameState.grid[ry][rx] !== 'empty') {
                     gameState.grid[ry][rx] = 'destroyed';
-                    gameState.statusGrid[ry][rx] = 'normal';
                 }
             }
             renderGrid();
-            selectTool(null);
         }
 
         function showNotification(text) {
             const notiEl = document.getElementById('notification');
             notiEl.innerText = text;
             notiEl.style.display = 'block';
-            setTimeout(() => { notiEl.style.display = 'none'; }, 2500);
+            setTimeout(() => { notiEl.style.display = 'none'; }, 2000);
         }
 
-        /* ------------------ File API 存檔讀檔 ------------------ */
+        /* ------------------ SONY 手機優化存檔讀檔 ------------------ */
         function openModal() {
             document.getElementById('file-modal').style.display = 'flex';
-            document.getElementById('file-input').value = "";
+            document.getElementById('fallback-link').style.display = 'none';
         }
 
         function closeModal() {
             document.getElementById('file-modal').style.display = 'none';
         }
 
-        function exportGameFile() {
+        // 升級版匯出存檔（支援 Web Share API + 多重觸發備案）
+        async function exportGameFile() {
             try {
                 const jsonString = JSON.stringify(gameState, null, 2);
                 const blob = new Blob([jsonString], { type: "application/json" });
+                const fileName = "SilverCity_Save.json";
+
+                // 方案 1: 使用行動端 Web Share API（專門解決 SONY/Android 瀏覽器不跳下載問題）
+                if (navigator.canShare && navigator.share) {
+                    const file = new File([blob], fileName, { type: "application/json" });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: '遊戲存檔',
+                            text: '銀髮樂園遊戲存檔檔案'
+                        });
+                        showNotification("存檔已分享/儲存！");
+                        closeModal();
+                        return;
+                    }
+                }
+
+                // 方案 2: Blob URL 下載觸發
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = "SilverCity_Save.json";
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
                 
+                // 方案 3: 顯示備用實體超連結（若上方自動下載被 SONY 系統擋下）
+                const fallbackLink = document.getElementById('fallback-link');
+                fallbackLink.href = url;
+                fallbackLink.download = fileName;
+                fallbackLink.style.display = 'block';
+
                 setTimeout(() => {
                     document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                }, 0);
+                }, 1000);
 
-                showNotification("存檔下載成功！");
-                closeModal();
+                showNotification("存檔下載已發送！");
             } catch (error) {
-                showNotification("存檔下載失敗！");
+                showNotification("存檔處理失敗！");
             }
         }
 
@@ -1138,39 +822,18 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const content = e.target.result;
-                    const parsedData = JSON.parse(content);
-
+                    const parsedData = JSON.parse(e.target.result);
                     if (parsedData.grid && typeof parsedData.funds === 'number') {
                         gameState = parsedData;
-                        
-                        if (!gameState.variantGrid) {
-                            gameState.variantGrid = gameState.grid.map(row => row.map(() => Math.floor(Math.random() * 3)));
-                        }
-                        if (!gameState.levelGrid) {
-                            gameState.levelGrid = gameState.grid.map(row => row.map(() => 1));
-                        }
-                        if (!gameState.statusGrid) {
-                            gameState.statusGrid = gameState.grid.map(row => row.map(() => 'normal'));
-                        }
-
-                        gameState.isRunning = false;
-                        document.getElementById('btn-start').innerText = "開始";
-                        document.getElementById('btn-start').classList.remove('paused');
-                        clearInterval(gameTimer);
-                        particles = [];
-                        animEntities = [];
-
                         renderGrid();
                         updateDashboard();
-                        
                         showNotification("存檔載入成功！");
                         closeModal();
                     } else {
                         throw new Error();
                     }
                 } catch (err) {
-                    showNotification("讀取失敗，檔案無效！");
+                    showNotification("讀取失敗，檔案格式不符！");
                 }
             };
             reader.readAsText(file);
