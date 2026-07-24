@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>銀髮樂園：復古城市建設（SONY與行動端優化版）</title>
+    <title>銀髮樂園：復古城市建設（SONY存檔修復完整版）</title>
     <style>
         * {
             font-family: "Microsoft JhengHei", "BiauKai", "標楷體", sans-serif;
@@ -26,7 +26,7 @@
             flex-direction: column;
         }
 
-        /* 頂部數據看板：壓縮高度，避免佔用過多空間 */
+        /* 頂部數據看板 */
         #dashboard {
             background-color: #ffffff;
             border-bottom: 3px solid #111;
@@ -75,7 +75,7 @@
             background-color: #cc0000;
         }
 
-        /* 遊戲地圖區：彈性縮放，永遠保持在視窗內 */
+        /* 遊戲地圖區：彈性縮放 */
         #game-container {
             flex: 1;
             position: relative;
@@ -84,7 +84,7 @@
             align-items: center;
             padding: 4px;
             background-color: #e8e8e8;
-            min-height: 0; /* 關鍵：防止 flex 子元素溢出 */
+            min-height: 0; /* 防止 flex 子元素溢出 */
         }
 
         #canvas-wrapper {
@@ -108,7 +108,7 @@
             z-index: 2;
         }
 
-        /* 底部建築工具欄：高度適中，支援滑動 */
+        /* 底部建築工具欄 */
         #tool-bar {
             background-color: #ffffff;
             border-top: 3px solid #111;
@@ -205,16 +205,19 @@
 
         #file-input { display: none; }
 
-        /* SONY 備用直接下載超連結 */
+        /* SONY / 行動裝置專用點擊連結備案 */
         #fallback-link {
             display: none;
             word-break: break-all;
-            margin-top: 8px;
-            padding: 8px;
+            margin: 8px 0;
+            padding: 10px;
             background: #fffbe6;
-            border: 1px dashed #d97706;
-            font-size: 0.95rem;
+            border: 2px dashed #d97706;
+            font-size: 1rem;
+            font-weight: bold;
             color: #b45309;
+            border-radius: 6px;
+            text-decoration: underline;
         }
 
         #notification {
@@ -223,7 +226,7 @@
             transform: translate(-50%, -50%);
             background-color: #cc0000;
             color: #fff;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             padding: 12px 24px;
             border: 3px solid #000;
@@ -232,6 +235,7 @@
             z-index: 2000;
             text-align: center;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            max-width: 85%;
         }
     </style>
 </head>
@@ -335,8 +339,8 @@
             <h2 style="color:#111; font-size:1.5rem; margin-bottom:10px;">系統存檔管理</h2>
             <button class="modal-btn" style="border-color: #0284c7; color: #0284c7; background-color: #f0f9ff;" onclick="exportGameFile()">⬇️ 下載/儲存存檔</button>
             
-            <!-- 手機專用點擊連結備案 -->
-            <a id="fallback-link" target="_blank">若上方按鈕無反應，請點此或長按儲存存檔檔案</a>
+            <!-- 手機專用點擊連結備案 (當被自動攔截時顯示) -->
+            <a id="fallback-link" target="_blank">👉 若未開始下載，請點此儲存檔案</a>
 
             <label class="file-label">
                 📁 選擇本機存檔載入
@@ -375,7 +379,6 @@
         let gameCanvas, gameCtx;
         let particleCanvas, particleCtx;
         let particles = [];
-        let animEntities = [];
 
         function initGame() {
             initGridData();
@@ -419,7 +422,6 @@
             const wrapper = document.getElementById('canvas-wrapper');
             if (!wrapper) return;
             
-            // 以寬高較小者為準，保持地圖正方形且不溢出螢幕
             const size = Math.min(wrapper.clientWidth, wrapper.clientHeight);
 
             gameCanvas.width = size;
@@ -756,10 +758,10 @@
             const notiEl = document.getElementById('notification');
             notiEl.innerText = text;
             notiEl.style.display = 'block';
-            setTimeout(() => { notiEl.style.display = 'none'; }, 2000);
+            setTimeout(() => { notiEl.style.display = 'none'; }, 2500);
         }
 
-        /* ------------------ SONY 手機優化存檔讀檔 ------------------ */
+        /* ------------------ SONY / Android 存檔與讀檔修復 ------------------ */
         function openModal() {
             document.getElementById('file-modal').style.display = 'flex';
             document.getElementById('fallback-link').style.display = 'none';
@@ -769,49 +771,43 @@
             document.getElementById('file-modal').style.display = 'none';
         }
 
-        // 升級版匯出存檔（支援 Web Share API + 多重觸發備案）
-        async function exportGameFile() {
+        function exportGameFile() {
             try {
+                // 1. 遊戲狀態 JSON 序列化
                 const jsonString = JSON.stringify(gameState, null, 2);
-                const blob = new Blob([jsonString], { type: "application/json" });
+                
+                // 2. 建立 Blob 與記憶體網址
+                const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
                 const fileName = "SilverCity_Save.json";
-
-                // 方案 1: 使用行動端 Web Share API（專門解決 SONY/Android 瀏覽器不跳下載問題）
-                if (navigator.canShare && navigator.share) {
-                    const file = new File([blob], fileName, { type: "application/json" });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: '遊戲存檔',
-                            text: '銀髮樂園遊戲存檔檔案'
-                        });
-                        showNotification("存檔已分享/儲存！");
-                        closeModal();
-                        return;
-                    }
-                }
-
-                // 方案 2: Blob URL 下載觸發
                 const url = URL.createObjectURL(blob);
+
+                // 3. 自動觸發下載 (適用大部分瀏覽器)
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = fileName;
+                a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
-                
-                // 方案 3: 顯示備用實體超連結（若上方自動下載被 SONY 系統擋下）
+
+                // 4. 生成視窗內的「實體備用按鈕」（解決 SONY 安全攔截問題）
                 const fallbackLink = document.getElementById('fallback-link');
-                fallbackLink.href = url;
-                fallbackLink.download = fileName;
-                fallbackLink.style.display = 'block';
+                if (fallbackLink) {
+                    fallbackLink.href = url;
+                    fallbackLink.download = fileName;
+                    fallbackLink.innerHTML = "👉 若未開始下載，請點此儲存存檔";
+                    fallbackLink.style.display = 'block';
+                }
 
                 setTimeout(() => {
-                    document.body.removeChild(a);
-                }, 1000);
+                    if (document.body.contains(a)) {
+                        document.body.removeChild(a);
+                    }
+                }, 3000);
 
-                showNotification("存檔下載已發送！");
+                showNotification("存檔檔案已生成！");
             } catch (error) {
-                showNotification("存檔處理失敗！");
+                console.error("Save Error:", error);
+                showNotification("儲存失敗: " + (error.message || "請檢視權限"));
             }
         }
 
@@ -830,10 +826,10 @@
                         showNotification("存檔載入成功！");
                         closeModal();
                     } else {
-                        throw new Error();
+                        throw new Error("格式錯誤");
                     }
                 } catch (err) {
-                    showNotification("讀取失敗，檔案格式不符！");
+                    showNotification("讀取失敗，存檔格式不符！");
                 }
             };
             reader.readAsText(file);
